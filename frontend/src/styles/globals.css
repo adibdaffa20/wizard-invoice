@@ -11,11 +11,3 @@ body,
 body {
   @apply bg-slate-50 text-slate-900;
 }
-
-* {
-  box-sizing: border-box;
-}
-
-button {
-  @apply transition;
-}
