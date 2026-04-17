@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"strings"
+
 	"invoice-app/internal/models"
 
 	"github.com/gofiber/fiber/v2"
@@ -12,7 +14,8 @@ type ItemHandler struct {
 }
 
 func (h *ItemHandler) GetItemByCode(c *fiber.Ctx) error {
-	code := c.Query("code")
+	code := strings.TrimSpace(c.Query("code"))
+
 	if code == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "code is required",
@@ -20,7 +23,13 @@ func (h *ItemHandler) GetItemByCode(c *fiber.Ctx) error {
 	}
 
 	var item models.Item
-	if err := h.DB.Where("code = ?", code).First(&item).Error; err != nil {
+
+	// 🔥 Flexible search
+	err := h.DB.
+		Where("code ILIKE ?", "%"+code+"%").
+		First(&item).Error
+
+	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"message": "item not found",
 		})

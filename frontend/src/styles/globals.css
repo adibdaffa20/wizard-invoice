@@ -15,22 +15,52 @@ body {
 @media print {
   @page {
     size: A4;
-    margin: 12mm;
+    margin: 4mm 12mm 10mm 12mm;
   }
 
   html,
   body {
     background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   body {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* sembunyikan semua */
+  body * {
+    visibility: hidden;
+  }
+
+  /* tampilkan hanya invoice */
+  .print-area,
+  .print-area * {
+    visibility: visible;
   }
 
   .print-area {
-    width: 210mm;
-    min-height: 297mm;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    min-height: 100%;
+
     margin: 0 auto;
+    padding: 0; /* ❗ padding dipindah ke inner div */
+
+    box-sizing: border-box;
+    background: white;
+  }
+
+  /* hide header/navbar */
+  header,
+  nav,
+  .navbar,
+  .app-header,
+  .wizard-header {
+    display: none !important;
   }
 }

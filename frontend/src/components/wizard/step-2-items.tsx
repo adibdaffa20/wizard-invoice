@@ -18,47 +18,41 @@ function ItemRow({ rowId }: ItemRowProps) {
   const { item, isLoading, error, debouncedCode } = useItemSearch(code);
 
   useEffect(() => {
-  if (!row || !item) return;
-  if (debouncedCode !== row.itemCode.trim().toUpperCase()) return;
+    if (!row || !item) return;
+    if (debouncedCode !== row.itemCode.trim().toUpperCase()) return;
 
-  const nextSubtotal = item.price * quantity;
+    const nextSubtotal = item.price * quantity;
+    const isSameValue =
+      row.itemId === item.id &&
+      row.itemName === item.name &&
+      row.price === item.price &&
+      row.subtotal === nextSubtotal;
 
-  const isSameValue =
-    row.itemId === item.id &&
-    row.itemName === item.name &&
-    row.price === item.price &&
-    row.subtotal === nextSubtotal;
+    if (isSameValue) return;
 
-  if (isSameValue) return;
-
-  updateItemRow(row.rowId, {
-    itemId: item.id,
-    itemName: item.name,
-    price: item.price,
-    subtotal: nextSubtotal,
-  });
-}, [
-  row?.rowId,
-  row?.itemId,
-  row?.itemName,
-  row?.price,
-  row?.subtotal,
-  row?.itemCode,
-  item?.id,
-  item?.name,
-  item?.price,
-  quantity,
-  debouncedCode,
-  updateItemRow,
-]);
+    updateItemRow(row.rowId, {
+      itemId: item.id,
+      itemName: item.name,
+      price: item.price,
+      subtotal: nextSubtotal,
+    });
+  }, [
+    row?.rowId, row?.itemId, row?.itemName, row?.price, row?.subtotal,
+    row?.itemCode, item?.id, item?.name, item?.price,
+    quantity, debouncedCode, updateItemRow,
+  ]);
 
   if (!row) return null;
 
+  const inputClass =
+    "w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-[#FFC81E] focus:ring-2 focus:ring-[#FFC81E]/20";
+
   return (
-    <tr className="border-b align-top">
-      <td className="p-2">
+    <div className="grid grid-cols-[1fr_2fr_80px_1fr_1fr_40px] gap-3 items-start rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+      {/* Kode barang */}
+      <div className="space-y-1">
         <input
-          className="w-full rounded border px-2 py-1 outline-none focus:border-slate-900"
+          className={inputClass}
           value={row.itemCode}
           onChange={(e) =>
             updateItemRow(row.rowId, {
@@ -71,50 +65,61 @@ function ItemRow({ rowId }: ItemRowProps) {
           }
           placeholder="BRG-001"
         />
-        {isLoading && <p className="mt-1 text-xs text-slate-500">Mencari...</p>}
-        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-      </td>
+        {isLoading && (
+          <p className="text-xs text-slate-400">Mencari...</p>
+        )}
+        {error && (
+          <p className="text-xs text-red-400">{error}</p>
+        )}
+      </div>
 
-      <td className="p-2">{row.itemName ?? "-"}</td>
+      {/* Nama barang */}
+      <div className="flex h-9 items-center">
+        {row.itemName ? (
+          <span className="text-sm text-slate-700">{row.itemName}</span>
+        ) : (
+          <span className="text-sm text-slate-300">—</span>
+        )}
+      </div>
 
-      <td className="p-2">
-        <input
-          type="number"
-          min={1}
-          className="w-24 rounded border px-2 py-1 outline-none focus:border-slate-900"
-          value={row.quantity}
-          onChange={(e) => {
-            const nextQuantity = Number(e.target.value) || 1;
-            const nextSubtotal = row.price ? row.price * nextQuantity : undefined;
+      {/* Qty */}
+      <input
+        type="number"
+        min={1}
+        className={inputClass}
+        value={row.quantity}
+        onChange={(e) => {
+          const nextQuantity = Number(e.target.value) || 1;
+          const nextSubtotal = row.price ? row.price * nextQuantity : undefined;
+          updateItemRow(row.rowId, { quantity: nextQuantity, subtotal: nextSubtotal });
+        }}
+      />
 
-            updateItemRow(row.rowId, {
-              quantity: nextQuantity,
-              subtotal: nextSubtotal,
-            });
-          }}
-        />
-      </td>
+      {/* Harga */}
+      <div className="flex h-9 items-center text-sm text-slate-600">
+        {typeof row.price === "number"
+          ? "Rp " + row.price.toLocaleString("id-ID")
+          : <span className="text-slate-300">—</span>}
+      </div>
 
-      <td className="p-2">
-        {typeof row.price === "number" ? row.price.toLocaleString("id-ID") : "-"}
-      </td>
-
-      <td className="p-2">
+      {/* Subtotal */}
+      <div className="flex h-9 items-center text-sm font-medium text-slate-800">
         {typeof row.subtotal === "number"
-          ? row.subtotal.toLocaleString("id-ID")
-          : "-"}
-      </td>
+          ? "Rp " + row.subtotal.toLocaleString("id-ID")
+          : <span className="text-slate-300">—</span>}
+      </div>
 
-      <td className="p-2">
-        <button
-          type="button"
-          onClick={() => removeItemRow(row.rowId)}
-          className="rounded bg-red-600 px-3 py-1 text-white hover:opacity-90"
-        >
-          Hapus
-        </button>
-      </td>
-    </tr>
+      {/* Hapus */}
+      <button
+        type="button"
+        onClick={() => removeItemRow(row.rowId)}
+        className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-500"
+      >
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 9h8l1-9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+    </div>
   );
 }
 
@@ -128,59 +133,59 @@ export default function Step2Items() {
   );
 
   return (
-    <div className="rounded-2xl border bg-white p-6 shadow-sm space-y-4">
+    <div className="p-6 space-y-6">
+      {/* Header */}
       <div>
-        <h2 className="text-xl font-semibold">Step 2 - Data Barang</h2>
-        <p className="mt-1 text-sm text-slate-500">
-          Ketik kode barang, sistem akan mencari item setelah 500ms.
+        <p className="text-xs font-medium uppercase tracking-wider text-[#B8900A]">
+          Langkah 2 dari 3
+        </p>
+        <p className="mt-0.5 text-sm text-slate-400">
+          Ketik kode barang — nama & harga akan otomatis terisi.
         </p>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full text-sm">
-          <thead>
-            <tr className="border-b text-left">
-              <th className="p-2">Kode Barang</th>
-              <th className="p-2">Nama Barang</th>
-              <th className="p-2">Qty</th>
-              <th className="p-2">Harga</th>
-              <th className="p-2">Subtotal</th>
-              <th className="p-2">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((row) => (
-              <ItemRow key={row.rowId} rowId={row.rowId} />
-            ))}
-          </tbody>
-        </table>
+      {/* Column headers */}
+      <div className="grid grid-cols-[1fr_2fr_80px_1fr_1fr_40px] gap-3 px-4">
+        {["Kode", "Nama barang", "Qty", "Harga satuan", "Subtotal", ""].map((h) => (
+          <span key={h} className="text-xs font-medium text-slate-400">{h}</span>
+        ))}
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setStep(1)}
-            className="rounded-lg border px-4 py-2 hover:bg-slate-50"
-          >
-            Kembali
-          </button>
-          <button
-            type="button"
-            onClick={addItemRow}
-            className="rounded-lg border px-4 py-2 hover:bg-slate-50"
-          >
-            Tambah Baris
-          </button>
-        </div>
+      {/* Rows */}
+      <div className="space-y-2">
+        {items.map((row) => (
+          <ItemRow key={row.rowId} rowId={row.rowId} />
+        ))}
+      </div>
 
+      {/* Add row */}
+      <button
+        type="button"
+        onClick={addItemRow}
+        className="flex items-center gap-2 rounded-lg border border-dashed border-[#FFC81E] bg-[#FFFBF0] px-4 py-2.5 text-sm font-medium text-[#B8900A] transition hover:bg-[#FFF3C4]"
+      >
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+        Tambah baris
+      </button>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+        <button
+          type="button"
+          onClick={() => setStep(1)}
+          className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 transition hover:bg-slate-50"
+        >
+          ← Kembali
+        </button>
         <button
           type="button"
           disabled={!canContinue}
           onClick={() => setStep(3)}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg bg-[#FFC81E] px-5 py-2 text-sm font-medium text-[#5C3D00] transition hover:bg-[#FFB800] disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Review
+          Review →
         </button>
       </div>
     </div>
