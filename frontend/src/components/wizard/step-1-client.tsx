@@ -8,12 +8,16 @@ export default function Step1Client() {
   const canContinue =
     client.senderName.trim() &&
     client.senderAddress.trim() &&
-    client.receiverName.trim() &&
-    client.receiverAddress.trim();
+    client.receiverName.trim();
 
   return (
     <div className="rounded-2xl border bg-white p-6 shadow-sm space-y-4">
-      <h2 className="text-xl font-semibold">Step 1 - Data Klien</h2>
+      <div>
+        <h2 className="text-xl font-semibold">Step 1 - Data Klien</h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Isi data pengirim dan penerima.
+        </p>
+      </div>
 
       <div className="space-y-3">
         <input

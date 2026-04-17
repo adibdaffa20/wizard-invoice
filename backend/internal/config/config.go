@@ -8,8 +8,10 @@ import (
 )
 
 type Config struct {
-	Port      string
-	JWTSecret string
+	Port        string
+	DatabaseURL string
+	JWTSecret   string
+	WebhookURL  string
 }
 
 func Load() Config {
@@ -20,13 +22,22 @@ func Load() Config {
 		port = "8080"
 	}
 
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		log.Fatal("DATABASE_URL is required")
+	}
+
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
 		log.Fatal("JWT_SECRET is required")
 	}
 
+	webhookURL := os.Getenv("WEBHOOK_URL")
+
 	return Config{
-		Port:      port,
-		JWTSecret: jwtSecret,
+		Port:        port,
+		DatabaseURL: databaseURL,
+		JWTSecret:   jwtSecret,
+		WebhookURL:  webhookURL,
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"invoice-app/internal/config"
+	"invoice-app/internal/database"
 	"invoice-app/internal/routes"
 
 	"github.com/gofiber/fiber/v2"
@@ -12,6 +13,16 @@ import (
 
 func main() {
 	cfg := config.Load()
+
+	database.Connect(cfg.DatabaseURL)
+
+	if err := database.AutoMigrate(); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := database.SeedItems(); err != nil {
+		log.Fatal(err)
+	}
 
 	app := fiber.New()
 

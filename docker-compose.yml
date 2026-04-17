@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: invoice_app_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: wizardinvoice
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    container_name: invoice_app_backend
+    depends_on:
+      - db
+    environment:
+      PORT: 8080
+      DATABASE_URL: postgres://postgres:postgres@db:5432/wizardinvoice?sslmode=disable
+      JWT_SECRET: supersecretkey
+      WEBHOOK_URL: https://webhook.site/ISI-DENGAN-URL-KAMU
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+    container_name: invoice_app_frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+
+volumes:
+  postgres_data:

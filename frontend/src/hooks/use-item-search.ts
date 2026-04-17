@@ -1,62 +1,60 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import { api } from "@/lib/axios";
 import type { Item } from "@/types/item";
 
+async function fetchItemByCode(code: string, signal?: AbortSignal) {
+  const response = await api.get<Item>(
+    `/api/items?code=${encodeURIComponent(code)}`,
+    { signal }
+  );
+
+  return response.data;
+}
+
 export function useItemSearch(code: string) {
-  const [item, setItem] = useState<Item | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const controllerRef = useRef<AbortController | null>(null);
+  const normalizedCode = code.trim().toUpperCase();
+  const [debouncedCode, setDebouncedCode] = useState("");
 
   useEffect(() => {
-    if (!code.trim()) {
-      controllerRef.current?.abort();
-      setItem(null);
-      setError(null);
-      setIsLoading(false);
+    if (!normalizedCode) {
+      setDebouncedCode("");
       return;
     }
 
-    const timeoutId = window.setTimeout(async () => {
-      controllerRef.current?.abort();
-      const controller = new AbortController();
-      controllerRef.current = controller;
-
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const response = await api.get<Item>(`/api/items?code=${encodeURIComponent(code)}`, {
-          signal: controller.signal,
-        });
-
-        setItem(response.data);
-      } catch (error: unknown) {
-        const err = error as AxiosError;
-
-        if (controller.signal.aborted || err.code === "ERR_CANCELED") {
-          return;
-        }
-
-        setItem(null);
-        setError("Barang tidak ditemukan");
-      } finally {
-        if (!controller.signal.aborted) {
-          setIsLoading(false);
-        }
-      }
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedCode(normalizedCode);
     }, 500);
 
     return () => {
       window.clearTimeout(timeoutId);
-      controllerRef.current?.abort();
     };
-  }, [code]);
+  }, [normalizedCode]);
+
+  const query = useQuery({
+    queryKey: ["item-search", debouncedCode],
+    enabled: debouncedCode.length > 0,
+    retry: false,
+    staleTime: 0,
+    queryFn: async ({ signal }) => {
+      return fetchItemByCode(debouncedCode, signal);
+    },
+  });
+
+  const error = useMemo(() => {
+    if (!query.error) return null;
+
+    const err = query.error as AxiosError;
+    if (err.code === "ERR_CANCELED") return null;
+
+    return "Barang tidak ditemukan";
+  }, [query.error]);
 
   return {
-    item,
-    isLoading,
+    item: query.data ?? null,
+    isLoading: query.isFetching,
     error,
+    debouncedCode,
   };
 }

@@ -15,22 +15,44 @@ function ItemRow({ rowId }: ItemRowProps) {
 
   const code = row?.itemCode ?? "";
   const quantity = row?.quantity ?? 1;
-  const { item, isLoading, error } = useItemSearch(code);
+  const { item, isLoading, error, debouncedCode } = useItemSearch(code);
 
   useEffect(() => {
-    if (item && row) {
-      updateItemRow(row.rowId, {
-        itemId: item.id,
-        itemName: item.name,
-        price: item.price,
-        subtotal: item.price * quantity,
-      });
-    }
-  }, [item, quantity, row, updateItemRow]);
+  if (!row || !item) return;
+  if (debouncedCode !== row.itemCode.trim().toUpperCase()) return;
 
-  if (!row) {
-    return null;
-  }
+  const nextSubtotal = item.price * quantity;
+
+  const isSameValue =
+    row.itemId === item.id &&
+    row.itemName === item.name &&
+    row.price === item.price &&
+    row.subtotal === nextSubtotal;
+
+  if (isSameValue) return;
+
+  updateItemRow(row.rowId, {
+    itemId: item.id,
+    itemName: item.name,
+    price: item.price,
+    subtotal: nextSubtotal,
+  });
+}, [
+  row?.rowId,
+  row?.itemId,
+  row?.itemName,
+  row?.price,
+  row?.subtotal,
+  row?.itemCode,
+  item?.id,
+  item?.name,
+  item?.price,
+  quantity,
+  debouncedCode,
+  updateItemRow,
+]);
+
+  if (!row) return null;
 
   return (
     <tr className="border-b align-top">
@@ -52,7 +74,9 @@ function ItemRow({ rowId }: ItemRowProps) {
         {isLoading && <p className="mt-1 text-xs text-slate-500">Mencari...</p>}
         {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
       </td>
+
       <td className="p-2">{row.itemName ?? "-"}</td>
+
       <td className="p-2">
         <input
           type="number"
@@ -61,15 +85,26 @@ function ItemRow({ rowId }: ItemRowProps) {
           value={row.quantity}
           onChange={(e) => {
             const nextQuantity = Number(e.target.value) || 1;
+            const nextSubtotal = row.price ? row.price * nextQuantity : undefined;
+
             updateItemRow(row.rowId, {
               quantity: nextQuantity,
-              subtotal: row.price ? row.price * nextQuantity : undefined,
+              subtotal: nextSubtotal,
             });
           }}
         />
       </td>
-      <td className="p-2">{row.price ? row.price.toLocaleString("id-ID") : "-"}</td>
-      <td className="p-2">{row.subtotal ? row.subtotal.toLocaleString("id-ID") : "-"}</td>
+
+      <td className="p-2">
+        {typeof row.price === "number" ? row.price.toLocaleString("id-ID") : "-"}
+      </td>
+
+      <td className="p-2">
+        {typeof row.subtotal === "number"
+          ? row.subtotal.toLocaleString("id-ID")
+          : "-"}
+      </td>
+
       <td className="p-2">
         <button
           type="button"
